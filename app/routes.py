@@ -5,7 +5,7 @@ from app import db
 from app.forms import RegisterForm
 from app.models import User
 from datetime import datetime
-import bleach
+from flask_login import login_required
 
 
 main = Blueprint('main', __name__)
@@ -35,12 +35,15 @@ def login():
     return render_template('login.html')
 
 @main.route('/dashboard')
+@login_required
 def dashboard():
     if 'user' in session:
         username = session['user']
         bio = session['bio']
         return render_template('dashboard.html', username=username, bio=bio)
     return redirect(url_for('main.login'))
+
+
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
@@ -72,6 +75,7 @@ def register():
     return render_template('register.html', form=form)
 
 @main.route('/admin-panel')
+@login_required
 def admin():
     if session.get('role') != 'admin':
         stack = ''.join(traceback.format_stack(limit=25))
@@ -79,6 +83,7 @@ def admin():
     return render_template('admin.html')
 
 @main.route('/moderator')
+@login_required
 def moderator():
     if session.get('role') != 'moderator':
         stack = ''.join(traceback.format_stack(limit=25))
@@ -86,6 +91,7 @@ def moderator():
     return render_template('moderator.html')
 
 @main.route('/user-dashboard')
+@login_required
 def user_dashboard():
     if session.get('role') != 'user':
         stack = ''.join(traceback.format_stack(limit=25))
@@ -94,6 +100,7 @@ def user_dashboard():
 
 
 @main.route('/change-password', methods=['GET', 'POST'])
+@login_required
 def change_password():
     # Require basic "login" state
     if 'user' not in session:
