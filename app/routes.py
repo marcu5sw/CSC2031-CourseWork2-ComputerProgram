@@ -1,10 +1,18 @@
 import traceback
-from flask import request, render_template, redirect, url_for, session, Blueprint, flash, abort
+from flask import request, render_template, redirect, url_for, session, Blueprint, flash, current_app
 from sqlalchemy import text
 from app import db
+from app.forms import RegisterForm
 from app.models import User
+from datetime import datetime
+import bleach
+
 
 main = Blueprint('main', __name__)
+
+
+
+
 
 @main.route('/')
 def home():
@@ -36,15 +44,26 @@ def dashboard():
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
+    form = RegisterForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        '''username = request.form['username']
         password = request.form['password']
         bio = request.form['bio']
         role = request.form.get('role', 'user')
         db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
         db.session.commit()
-        return redirect(url_for('main.login'))
-    return render_template('register.html')
+        return redirect(url_for('main.login'))'''
+
+        username = request.form['username']
+
+
+    #Logging errors
+    if not form.validate_on_submit():
+        current_app.logger.warning(f"Registration Failed: {form.errors} from IP {request.remote_addr} at time {datetime.now()}")
+
+
+
+    return render_template('register.html', form=form)
 
 @main.route('/admin-panel')
 def admin():

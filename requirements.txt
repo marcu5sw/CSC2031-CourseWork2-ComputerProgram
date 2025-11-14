@@ -1,2 +1,7 @@
 flask
 flask-sqlalchemy
+flask_wtf
+wtforms.validators
+wtforms
+bleach
+email_validator

@@ -3,9 +3,43 @@
 {% block content %}
 <h1>Register</h1>
 <form method="POST" novalidate>
-  Username: <input type="text" name="username"><br>
+  <!--Username: <input type="text" name="username"><br>
   Password: <input type="password" name="password"><br>
   Biography: <input type="text" name="bio"><br>
-  <input type="submit" value="Register">
+  <input type="submit" value="Register">-->
+
+    {{ form.hidden_tag() }}
+
+    <p>
+        {{ form.username.label }}
+        {{ form.username(placeholder = "Username", autocomplete = "username", required = True) }}
+    </p>
+
+    <p>
+        {{ form.password.label }}
+        {{ form.password(placeholder = "Password", autocomplete = "password", required = True) }}
+    </p>
+
+    <p>
+        {{ form.bio.label }}
+        {{ form.bio(placeholder = "Biography") }}
+    </p>
+
+    <p>
+        {{ form.register.label }}
+        {{ form.register(value = submit) }}
+    </p>
+
+
+<!-- Displaying error messages -->
+{% with message = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color:red"> {{ message }} </p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+
 </form>
 {% endblock %}
