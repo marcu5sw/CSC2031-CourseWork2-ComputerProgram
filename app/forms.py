@@ -58,7 +58,8 @@ class RegisterForm(FlaskForm):
                                                     passwordPolicy])
 
 
-    bio = StringField('Bio',validators=[DataRequired(message="Bio required.")])
+    bio = StringField('Bio',validators=[DataRequired(message="Bio required."),
+                                        Length(max=30, message="Bio must be less than 30 characters long.")])
 
 
 
