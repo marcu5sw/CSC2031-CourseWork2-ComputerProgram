@@ -3,9 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 
-
 db = SQLAlchemy()
 csrf = CSRFProtect()
+
+
+
 
 def create_app():
     app = Flask(__name__)
@@ -13,6 +15,7 @@ def create_app():
 
     db.init_app(app)
     csrf.init_app(app)
+
 
     from .routes import main
     app.register_blueprint(main)
