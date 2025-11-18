@@ -10,6 +10,7 @@ import re
 def passwordPolicy(form, field):
 
     password = field.data
+    username = form.username.data
 
 
     #At least one upper case
@@ -23,6 +24,10 @@ def passwordPolicy(form, field):
     #At least one special Character
     specialCharacter = Regexp(r'(?=.*[!@#$%^&*]).*$', message = "Passwords must contain at least 1 special character")
     specialCharacter(form, field)
+
+    #Can't contain any part of the username (email)
+    if password.lower() in username.lower():
+        raise ValidationError('Password cannot contain any part of the username (email)')
 
 
     #Black listed names

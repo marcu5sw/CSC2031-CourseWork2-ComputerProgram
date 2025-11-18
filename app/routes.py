@@ -49,26 +49,38 @@ def dashboard():
 def register():
     form = RegisterForm()
     if request.method == 'POST' and form.validate_on_submit():
-        username = request.form['username']
-        password = request.form['password']
-        bio = request.form['bio']
-        role = request.form.get('role', 'user')
-        db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
-        db.session.commit()
+            username = request.form['username']
+            password = request.form['password']
+            bio = request.form['bio']
+            role = request.form.get('role', 'user')
+            db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
+            db.session.commit()
 
-        # Logging successful registration
-        current_app.logger.info(
-            f"Registration Successful for {username} from IP {request.remote_addr} at {datetime.now()}")
+            # Logging successful registration
+            current_app.logger.info(
+                f"Registration Successful for {username} from IP {request.remote_addr} at {datetime.now()}")
 
-        return redirect(url_for('main.login'))
-
-
+            return redirect(url_for('main.login'))
 
 
 
-    #Logging errors
+
+
+
     if not form.validate_on_submit():
+
+        # Logging errors
         current_app.logger.warning(f"Registration Failed: {form.errors} from IP {request.remote_addr} at {datetime.now()}")
+
+
+        # Flashing the error
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"{field} - {error}")
+
+
+        #Redirecting back to register form
+        return render_template('register.html', form=form)
 
 
 

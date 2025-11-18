@@ -32,13 +32,15 @@
 
 
 <!-- Displaying error messages -->
-{% with message = get_flashed_messages() %}
+{% with messages = get_flashed_messages() %}
     {% if messages %}
         {% for message in messages %}
             <p style="color:red"> {{ message }} </p>
         {% endfor %}
     {% endif %}
 {% endwith %}
+
+
 
 
 </form>
