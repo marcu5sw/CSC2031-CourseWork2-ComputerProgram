@@ -182,6 +182,9 @@ def register():
 def admin():
     if session.get('role') != 'admin':
         stack = ''.join(traceback.format_stack(limit=25))
+        current_app.logger.warning(
+            f'{current_user.username} TRYING TO ACCESS THE ADMIN-PANEL'
+        )
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
     return render_template('admin.html')
 
@@ -190,6 +193,9 @@ def admin():
 def moderator():
     if session.get('role') != 'moderator':
         stack = ''.join(traceback.format_stack(limit=25))
+        current_app.logger.warning(
+            f'{current_user.username} TRYING TO ACCESS THE MODERATOR DASHBOARD'
+        )
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
     return render_template('moderator.html')
 
@@ -198,6 +204,9 @@ def moderator():
 def user_dashboard():
     if session.get('role') != 'user':
         stack = ''.join(traceback.format_stack(limit=25))
+        current_app.logger.warning(
+            f'{current_user.username} TRYING TO ACCESS THE USER DASHBOARD'
+        )
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
     return render_template('user_dashboard.html', username=session.get('user'))
 
