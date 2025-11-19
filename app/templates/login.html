@@ -3,6 +3,31 @@
 {% block content %}
 <h1>Login</h1>
 
+
+
+<form method="POST" novalidate>
+  <!--Username: <input type="text" name="username"><br>
+  Password: <input type="password" name="password"><br>
+  <input type="submit" value="Login">-->
+
+    {{ form.hidden_tag() }}
+
+    <p>
+        {{ form.username.label }}
+        {{ form.username(placeholder = "Username", autocomplete = "username") }}
+    </p>
+
+    <p>
+        {{ form.password.label }}
+        {{ form.password(placeholder = "Password", autocomplete = "password") }}
+    </p>
+
+    <p>
+        {{ form.login.label }}
+        {{ form.login(value = submit) }}
+    </p>
+
+
 <!-- Flash messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -11,11 +36,6 @@
 {% endfor %}
 {% endif %}
 {% endwith %}
-
-<form method="POST" novalidate>
-  Username: <input type="text" name="username"><br>
-  Password: <input type="password" name="password"><br>
-  <input type="submit" value="Login">
 </form>
 {% endblock %}
 

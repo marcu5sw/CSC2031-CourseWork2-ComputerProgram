@@ -2,7 +2,7 @@ import traceback
 from flask import request, render_template, redirect, url_for, session, Blueprint, flash, current_app
 from sqlalchemy import text
 from app import db
-from app.forms import RegisterForm
+from app.forms import RegisterForm, LoginForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required
@@ -20,7 +20,8 @@ def home():
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
+    form = LoginForm()
+    if request.method == 'POST' and form.validate_on_submit():
         username = request.form['username']
         password = request.form['password']
         row = db.session.execute(text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")).mappings().first()
@@ -32,7 +33,10 @@ def login():
             return redirect(url_for('main.dashboard'))
         else:
             flash('Login credentials are invalid, please try again')
-    return render_template('login.html')
+
+
+        return redirect(url_for('main.dashboard'))
+    return render_template('login.html', form=form)
 
 @main.route('/dashboard')
 @login_required

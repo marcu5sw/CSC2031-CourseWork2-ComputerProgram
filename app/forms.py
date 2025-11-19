@@ -69,3 +69,12 @@ class RegisterForm(FlaskForm):
 
 
     register = SubmitField('Register')
+
+
+
+class LoginForm(FlaskForm):
+
+    #Don't need input validation if users are already registered
+    username = EmailField('Username',validators=[DataRequired(message="Username required."),])
+    password = PasswordField('Password',validators=[DataRequired(message="Password required."),])
+    login = SubmitField('Login')
