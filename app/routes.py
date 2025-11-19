@@ -5,7 +5,7 @@ from app import db
 from app.forms import RegisterForm, LoginForm
 from app.models import User
 from datetime import datetime
-from flask_login import login_required
+from flask_login import login_required, login_user, current_user
 from . import bcrypt
 
 main = Blueprint('main', __name__)
@@ -20,32 +20,56 @@ def home():
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
+
     form = LoginForm()
+
     if request.method == 'POST' and form.validate_on_submit():
+
         username = request.form['username']
         password = request.form['password']
-        row = db.session.execute(text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")).mappings().first()
-        if row:
-            user = db.session.get(User, row['id'])  # creates a User object
-            session['user'] = user.username
-            session['role'] = user.role
-            session['bio'] = user.bio
+
+        #Hashing password and checking against DB
+        user = User.query.filter_by(username=username).first() #Getting default user with same password
+        if user and bcrypt.check_password_hash(user.password, password): #Comparing the 2 hash values
+
+            print("Works")
+
+
+
+            row = db.session.execute(text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")).mappings().first()
+            if row:
+                user = db.session.get(User, row['id'])  # creates a User object
+                session['user'] = user.username
+                session['role'] = user.role
+                session['bio'] = user.bio
+
+                #Logging successful login
+                current_app.logger.info(
+                    f"Registration Successful for {username} from IP {request.remote_addr} at {datetime.now()}"
+                )
+
+
+                return redirect(url_for('main.dashboard'))
+            else:
+                flash('Login credentials are invalid, please try again')
+
+            print("Works2")
+            login_user(user)
+
             return redirect(url_for('main.dashboard'))
-        else:
-            flash('Login credentials are invalid, please try again')
 
 
-        return redirect(url_for('main.dashboard'))
     return render_template('login.html', form=form)
 
 @main.route('/dashboard')
 @login_required
 def dashboard():
-    if 'user' in session:
+    '''if 'user' in session:
         username = session['user']
         bio = session['bio']
         return render_template('dashboard.html', username=username, bio=bio)
-    return redirect(url_for('main.login'))
+    return redirect(url_for('main.login'))'''
+    return render_template('dashboard.html', username=current_user.username, bio=current_user.bio)
 
 
 
@@ -93,6 +117,11 @@ def register():
 
 
     return render_template('register.html', form=form)
+
+
+
+
+
 
 @main.route('/admin-panel')
 @login_required
