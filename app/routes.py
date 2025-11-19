@@ -50,8 +50,10 @@ def login():
         username = safeHTML(request.form['username'])
         password = request.form['password']
 
+        user = User.query.filter_by(username=username).first()  # Checking User exists
+
+        #CASE 1: Right username and password
         #Hashing password and checking against DB
-        user = User.query.filter_by(username=username).first() #Getting default user with same password
         if user and bcrypt.check_password_hash(user.password, password): #Comparing the 2 hash values
 
             print("Works")
@@ -63,7 +65,6 @@ def login():
             session['bio'] = user.bio
 
             #Logging successful login
-            current_user.loginattempts = 0 #Resetting to 0 after a correct login attempt
             current_app.logger.info(
                 f"REGISTRATION SUCCESSFUL FOR {username} from IP {request.remote_addr} at {datetime.now()}"
             )
@@ -71,21 +72,24 @@ def login():
 
 
             login_user(user)
+            user.loginattempts = 0  # Resetting to 0 after a correct login attempt
             return redirect(url_for('main.dashboard'))
 
 
-        #Logging unsuccessful login
-        else:
-            current_user.loginattempts += 1 #Tracking loging failure
+        #CASE 2: Right username but wrong password
+        elif user:
+            user.loginattempts += 1 #Tracking loging failure
+            db.session.commit()
+            #Logging the failure
             current_app.logger.warning(
-                f"REGISTRATION NOT SUCCESSFUL FOR {current_user.username} from IP {request.remote_addr} at {datetime.now()}"
-                f"ATTEMPT NUMBER: {current_user.loginattempts}"
+                f"REGISTRATION NOT SUCCESSFUL FOR {username} from IP {request.remote_addr} at {datetime.now()}"
+                f"ATTEMPT NUMBER: {user.loginattempts}"
             )
-            flash('Login credentials are invalid, please try again')
+            flash('Password is invalid, please try again')
 
 
             #Locking user out after 5 failed attempts
-            if current_user.loginattempts >= 6:
+            if user.loginattempts >= 6:
                 current_app.logger.warning(
                     f"USER EXCEEDED 5 LOGIN FAILURES, LOCKING OUT"
                 )
@@ -96,6 +100,13 @@ def login():
 
 
             #Redirecting back to login page
+            return redirect(url_for('main.login'))
+
+
+
+        #CASE 3: Username doesn't exist
+        else:
+            flash("This user does not exist")
             return redirect(url_for('main.login'))
 
 

@@ -45,15 +45,19 @@ def create_app():
 
 
         users = [
-            {"username": "user1@email.com", "password": userpass, "role": "user", "bio": "I'm a basic user"},
-            {"username": "mod1@email.com", "password": modpass, "role": "moderator", "bio": "I'm a moderator"},
-            {"username": "admin1@email.com", "password": adminpass, "role": "admin", "bio": "I'm an administrator"}
+            {"username": "user1@email.com", "password": userpass, "role": "user", "bio": "I'm a basic user",
+                        "Log in Attempts": 0},
+            {"username": "mod1@email.com", "password": modpass, "role": "moderator", "bio": "I'm a moderator",
+                        "Log in Attempts": 0},
+            {"username": "admin1@email.com", "password": adminpass, "role": "admin", "bio": "I'm an administrator",
+                        "Log in Attempts": 0},
         ]
 
 
 
         for user in users:
-            user = User(username=user["username"], password=user["password"], role=user["role"], bio=user["bio"])
+            user = User(username=user["username"], password=user["password"], role=user["role"], bio=user["bio"],
+                        loginattempts=user["Log in Attempts"])
             db.session.add(user)
             db.session.commit()
 

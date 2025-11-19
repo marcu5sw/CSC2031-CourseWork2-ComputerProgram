@@ -9,11 +9,13 @@ class User(db.Model, UserMixin):
     bio = db.Column(db.String(500), nullable=False)
     loginattempts = db.Column(db.Integer,default=0)     #Adding number of login attempts to all users
 
-    def __init__(self, username, password, role, bio):
+    def __init__(self, username, password, role, bio, loginattempts):
         self.username = username
         self.password = password
         self.role = role
         self.bio = bio
+        self.loginattempts = loginattempts
+
 
 
 
