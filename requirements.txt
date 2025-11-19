@@ -8,3 +8,4 @@ email_validator
 flask_login
 flask_bcrypt
 flask_session
+flask_limiter

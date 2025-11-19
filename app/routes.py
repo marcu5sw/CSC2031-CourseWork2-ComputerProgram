@@ -1,7 +1,7 @@
 import traceback
 from flask import request, render_template, redirect, url_for, session, Blueprint, flash, current_app, abort
 from sqlalchemy import text
-from app import db
+from app import db, limiter
 from app.forms import RegisterForm, LoginForm
 from app.models import User
 from datetime import datetime
@@ -39,6 +39,7 @@ def home():
 
 
 @main.route('/login', methods=['GET', 'POST'])
+@limiter.limit("100 per minute", methods=["POST"]) #ONLY APPLIES TO POST REQUESTS
 def login():
     print("Before initializing login")
 

@@ -4,13 +4,17 @@ from config import Config
 from flask_wtf.csrf import CSRFProtect
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
-from flask_session import Session
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
+limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
+
+
 
 
 @login_manager.user_loader
@@ -26,6 +30,7 @@ def create_app():
     csrf.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'main.login'
+    limiter.init_app(app)
     #Session(app)
 
 
