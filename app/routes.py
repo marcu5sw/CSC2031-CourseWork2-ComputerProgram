@@ -1,11 +1,12 @@
 import traceback
-from flask import request, render_template, redirect, url_for, session, Blueprint, flash, current_app
+from flask import request, render_template, redirect, url_for, session, Blueprint, flash, current_app, abort
 from sqlalchemy import text
 from app import db
 from app.forms import RegisterForm, LoginForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user
+
 
 
 from . import bcrypt
@@ -27,9 +28,9 @@ def safeHTML(user_input):
     )
 
 
-'''@app.before_request
+@main.before_request
 def make_session_permanent():
-    session.permanent = True'''
+    session.permanent = True
 
 @main.route('/')
 def home():
@@ -62,7 +63,7 @@ def login():
             session['bio'] = user.bio
 
             #Logging successful login
-
+            current_user.loginattempts = 0 #Resetting to 0 after a correct login attempt
             current_app.logger.info(
                 f"REGISTRATION SUCCESSFUL FOR {username} from IP {request.remote_addr} at {datetime.now()}"
             )
@@ -75,10 +76,24 @@ def login():
 
         #Logging unsuccessful login
         else:
+            current_user.loginattempts += 1 #Tracking loging failure
             current_app.logger.warning(
                 f"REGISTRATION NOT SUCCESSFUL FOR {current_user.username} from IP {request.remote_addr} at {datetime.now()}"
+                f"ATTEMPT NUMBER: {current_user.loginattempts}"
             )
             flash('Login credentials are invalid, please try again')
+
+
+            #Locking user out after 5 failed attempts
+            if current_user.loginattempts >= 6:
+                current_app.logger.warning(
+                    f"USER EXCEEDED 5 LOGIN FAILURES, LOCKING OUT"
+                )
+                flash('Too many login attempts, try again later')
+                return 'Too many login attempts, try again later', 403
+
+
+
 
             #Redirecting back to login page
             return redirect(url_for('main.login'))
@@ -119,7 +134,7 @@ def register():
             current_app.logger.info(
                 f"Registration Successful for {username} from IP {request.remote_addr} at {datetime.now()}")
 
-            return redirect(url_for('main.login'))
+            return redirect(url_for('main.dashboard'))
 
 
 
@@ -212,5 +227,7 @@ def change_password():
         return redirect(url_for('main.dashboard'))
 
     return render_template('change_password.html')
+
+
 
 

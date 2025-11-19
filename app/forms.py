@@ -78,3 +78,6 @@ class LoginForm(FlaskForm):
     username = EmailField('Username',validators=[DataRequired(message="Username required."),])
     password = PasswordField('Password',validators=[DataRequired(message="Password required."),])
     login = SubmitField('Login')
+
+
+
