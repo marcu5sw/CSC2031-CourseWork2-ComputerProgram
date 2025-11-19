@@ -6,26 +6,47 @@ from app.forms import RegisterForm, LoginForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user
+
+
 from . import bcrypt
+import bleach
 
 main = Blueprint('main', __name__)
 
 
+#Data sanitiziation function
+def safeHTML(user_input):
+    return bleach.clean(
+        user_input,
+        tags = ['b', 'i', 'u',
+                'em', 'strong',
+                'a', 'p', 'ul',
+                'ol', 'li', 'br'],
+        attributes = {'a': ['href', 'title']},
+        strip = True
+    )
 
 
+'''@app.before_request
+def make_session_permanent():
+    session.permanent = True'''
 
 @main.route('/')
 def home():
     return render_template('home.html')
 
+
+
 @main.route('/login', methods=['GET', 'POST'])
 def login():
+    print("Before initializing login")
 
     form = LoginForm()
-
+    print("Before validating login")
     if request.method == 'POST' and form.validate_on_submit():
 
-        username = request.form['username']
+        #sanitizing input
+        username = safeHTML(request.form['username'])
         password = request.form['password']
 
         #Hashing password and checking against DB
@@ -33,30 +54,35 @@ def login():
         if user and bcrypt.check_password_hash(user.password, password): #Comparing the 2 hash values
 
             print("Works")
+            #row = db.session.execute(text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")).mappings().first()
+            #if row:
+                #user = db.session.get(User, row['id'])  # creates a User object
+            session['user'] = user.username
+            session['role'] = user.role
+            session['bio'] = user.bio
+
+            #Logging successful login
+
+            current_app.logger.info(
+                f"REGISTRATION SUCCESSFUL FOR {username} from IP {request.remote_addr} at {datetime.now()}"
+            )
 
 
 
-            row = db.session.execute(text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")).mappings().first()
-            if row:
-                user = db.session.get(User, row['id'])  # creates a User object
-                session['user'] = user.username
-                session['role'] = user.role
-                session['bio'] = user.bio
-
-                #Logging successful login
-                current_app.logger.info(
-                    f"Registration Successful for {username} from IP {request.remote_addr} at {datetime.now()}"
-                )
-
-
-                return redirect(url_for('main.dashboard'))
-            else:
-                flash('Login credentials are invalid, please try again')
-
-            print("Works2")
             login_user(user)
-
             return redirect(url_for('main.dashboard'))
+
+
+        #Logging unsuccessful login
+        else:
+            current_app.logger.warning(
+                f"REGISTRATION NOT SUCCESSFUL FOR {current_user.username} from IP {request.remote_addr} at {datetime.now()}"
+            )
+            flash('Login credentials are invalid, please try again')
+
+            #Redirecting back to login page
+            return redirect(url_for('main.login'))
+
 
 
     return render_template('login.html', form=form)
@@ -77,9 +103,10 @@ def dashboard():
 def register():
     form = RegisterForm()
     if request.method == 'POST' and form.validate_on_submit():
-            username = request.form['username']
-            password = request.form['password']
-            bio = request.form['bio']
+            #Sanitizing input
+            username = safeHTML(request.form['username'])
+            password = safeHTML(request.form['password'])
+            bio = safeHTML(request.form['bio'])
             role = request.form.get('role', 'user')
 
             #Hashing users password
