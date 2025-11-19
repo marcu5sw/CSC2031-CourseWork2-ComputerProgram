@@ -6,3 +6,4 @@ wtforms
 bleach
 email_validator
 flask_login
+flask_bcrypt

@@ -6,7 +6,7 @@ from app.forms import RegisterForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required
-
+from . import bcrypt
 
 main = Blueprint('main', __name__)
 
@@ -53,7 +53,11 @@ def register():
             password = request.form['password']
             bio = request.form['bio']
             role = request.form.get('role', 'user')
+
+            #Hashing users password
+            password = bcrypt.generate_password_hash(password).decode('utf-8')
             db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
+
             db.session.commit()
 
             # Logging successful registration
