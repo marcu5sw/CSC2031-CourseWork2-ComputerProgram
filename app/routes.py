@@ -6,6 +6,7 @@ from app.forms import RegisterForm, LoginForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user
+from sqlalchemy.engine import cursor
 
 
 
@@ -15,7 +16,7 @@ import bleach
 main = Blueprint('main', __name__)
 
 
-#Data sanitiziation function
+#Data sanitisiation function
 def safeHTML(user_input):
     return bleach.clean(
         user_input,
@@ -51,6 +52,7 @@ def login():
         username = safeHTML(request.form['username'])
         password = request.form['password']
 
+        #Mitigating SQL injection (ORM based)
         user = User.query.filter_by(username=username).first()  # Checking User exists
 
         #CASE 1: Right username and password
@@ -138,7 +140,17 @@ def register():
 
             #Hashing users password
             password = bcrypt.generate_password_hash(password).decode('utf-8')
-            db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
+            #db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
+            #Changing to parameterized queries to protect against SQL injection
+            db.session.execute(text(f"INSERT INTO user (username, password, role, bio)"
+                                    f" VALUES (:username, :password, :role, :bio)"),#: so read as parameters, not columns
+                                    #Needs to be a dictionary, not tuples
+                               {
+                                   "username": username,
+                                   "password": password,
+                                   "role": role,
+                                   "bio": bio
+                               })
 
             db.session.commit()
 
@@ -222,13 +234,24 @@ def change_password():
     username = session['user']
 
     if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
+        #Sanitizing users input
+        current_password = safeHTML(request.form.get('current_password', ''))
+        new_password = safeHTML(request.form.get('new_password', ''))
 
-        user = db.session.execute(
+        '''user = db.session.execute(
             text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{current_password}' LIMIT 1")
-        ).mappings().first()
-
+        ).mappings().first()'''
+        #Changing to parameterized queries to protect from SQL injection
+        '''user = cursor.execute(text(f"SELECT * FROM user WHERE username = (username) AND password = (current_password) LIMIT 1)"
+                                   f"VALUES (:username,:current_password)", #: so read as parameters, not columns
+                                   #Needs to be dictionary, not tuple
+                                   {
+                                       "username": username,
+                                       "current_password": current_password
+                                   }
+                                   )
+                              )'''
+        user = User.query.filter_by(username=username).first()
         # Enforce: current password must be valid for user
         if not user:
             flash('Current password is incorrect', 'error')
@@ -239,10 +262,14 @@ def change_password():
             flash('New password must be different from the current password', 'error')
             return render_template('change_password.html')
 
+
         db.session.execute(
             text(f"UPDATE user SET password = '{new_password}' WHERE username = '{username}'")
         )
         db.session.commit()
+        #Changing to parameterized queries to protect from SQL injection
+        #db.session.execute("UPDATE user SET password = ? WHERE username = ?",
+                           #(username, new_password))
 
         flash('Password changed successfully', 'success')
         return redirect(url_for('main.dashboard'))
