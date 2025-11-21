@@ -137,19 +137,23 @@ def register():
             password = safeHTML(request.form['password'])
             bio = safeHTML(request.form['bio'])
             role = request.form.get('role', 'user')
+            #loginattempts = request.form.get('loginattempts', 0) #Default is 0
+
+
 
             #Hashing users password
             password = bcrypt.generate_password_hash(password).decode('utf-8')
             #db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
             #Changing to parameterized queries to protect against SQL injection
-            db.session.execute(text(f"INSERT INTO user (username, password, role, bio)"
-                                    f" VALUES (:username, :password, :role, :bio)"),#: so read as parameters, not columns
+            db.session.execute(text(f"INSERT INTO user (username, password, role, bio, loginattempts)"
+                                    f" VALUES (:username, :password, :role, :bio, :loginattempts)"),#: so read as parameters, not columns
                                     #Needs to be a dictionary, not tuples
                                {
                                    "username": username,
                                    "password": password,
                                    "role": role,
-                                   "bio": bio
+                                   "bio": bio,
+                                   "loginattempts": 0
                                })
 
             db.session.commit()
@@ -266,7 +270,7 @@ def change_password():
 
         #Different to insert which uses VALUE. VALUE not valid syntax for update command
         db.session.execute(
-            text(f"UPDATE user SET password = (:newpass) WHERE username = (:storedusername)"),
+            text(f"UPDATE user SET password = :newpass WHERE username = :storedusername"),
                 #Needs to be dictionary, not tuple
                 {
                 "newpass": hashed_new,
