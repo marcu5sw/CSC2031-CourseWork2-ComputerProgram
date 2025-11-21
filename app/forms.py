@@ -81,3 +81,15 @@ class LoginForm(FlaskForm):
 
 
 
+class changePasswordForm(FlaskForm):
+
+
+    current_password = PasswordField('',validators=[DataRequired(message="Password required."),
+                                                    Length(min=10,
+                                                           message="Password must be at least 10 characters long.")])
+
+    new_password = PasswordField('',validators=[DataRequired(message="Password required."),
+                                                Length(min=10,
+                                                       message="Password must be at least 10 characters long.")])
+    submit = SubmitField('Change Password')
+
