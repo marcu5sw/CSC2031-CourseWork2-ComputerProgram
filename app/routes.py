@@ -30,12 +30,18 @@ def safeHTML(user_input):
     )
 
 
-
+#REMOVE LATER IF IMPLEMENTING FLASK TALISMAN EXTENSION. DOES THIS AUTOMATICALLY
 #Enabling HSTS. Telling browser to only send HTTPS. Keeps communication secure
 @main.after_request
 def apply_HSTS(response):
     #Enforcing HTTPS for 1 year and applying to all sub domains
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
+#Denying iframe options (HTML pages within HTML pages)
+@main.after_request
+def apply_xframe(response):
+    response.headers['X-Frame-Options'] = 'DENY'
     return response
 
 
