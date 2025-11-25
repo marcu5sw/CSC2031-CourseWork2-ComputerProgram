@@ -31,6 +31,14 @@ def safeHTML(user_input):
 
 
 
+#Enabling HSTS. Telling browser to only send HTTPS. Keeps communication secure
+@main.after_request
+def apply_HSTS(response):
+    #Enforcing HTTPS for 1 year and applying to all sub domains
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
+
 #Error handling for CSRF
 @main.errorhandler(CSRFError)
 def handle_csrf_error(e):
