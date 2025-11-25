@@ -6,7 +6,7 @@ from app import db, limiter
 from app.forms import RegisterForm, LoginForm, changePasswordForm
 from app.models import User
 from datetime import datetime
-from flask_login import login_required, login_user, current_user
+from flask_login import login_required, login_user, current_user, logout_user
 #from sqlalchemy.engine import cursor
 
 
@@ -153,6 +153,11 @@ def dashboard():
         bio = session['bio']
         return render_template('dashboard.html', username=username, bio=bio)
     return redirect(url_for('main.login'))'''
+    if not current_user:
+        flash('User not found')
+        return redirect(url_for('main.login'))
+
+
     return render_template('dashboard.html', username=current_user.username, bio=current_user.bio)
 
 
@@ -320,7 +325,13 @@ def change_password():
 
 
 
-
+@main.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    session.clear()
+    flash("You have been logged out.")
+    return redirect(url_for('main.dashboard'))
 
 
 

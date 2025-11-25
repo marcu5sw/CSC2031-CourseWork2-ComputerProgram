@@ -28,7 +28,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # CSP
+    #Custom CSP
     csp = {
         'default-src': ["'self'"],
         'script-src': ["'self'",
