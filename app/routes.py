@@ -34,6 +34,10 @@ def safeHTML(user_input):
 #Error handling for CSRF
 @main.errorhandler(CSRFError)
 def handle_csrf_error(e):
+    #Logging the error
+    current_app.logger.warning(
+        f"CSRF ERROR DETECTED FROM IP {request.remote_addr} AT {datetime.now()}"
+    )
     return render_template('error.html', reason = e.description), 403
 
 @main.before_request
