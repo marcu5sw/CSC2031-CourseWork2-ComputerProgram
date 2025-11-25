@@ -1,12 +1,13 @@
 import traceback
 from flask import request, render_template, redirect, url_for, session, Blueprint, flash, current_app, abort
+from flask_wtf.csrf import CSRFError
 from sqlalchemy import text
 from app import db, limiter
 from app.forms import RegisterForm, LoginForm, changePasswordForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user
-from sqlalchemy.engine import cursor
+#from sqlalchemy.engine import cursor
 
 
 
@@ -28,6 +29,12 @@ def safeHTML(user_input):
         strip = True
     )
 
+
+
+#Error handling for CSRF
+@main.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    return render_template('error.html', reason = e.description), 403
 
 @main.before_request
 def make_session_permanent():
@@ -288,75 +295,6 @@ def change_password():
 
 
     return render_template('change_password.html', form=form)
-
-
-
-
-
-
-
-
-'''def change_password():
-
-    form = changePasswordForm()
-    # Require basic "login" state
-    if 'user' not in session:
-        stack = ''.join(traceback.format_stack(limit=25))
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
-
-    username = form.username.data
-
-    if request.method == 'POST':
-        #Sanitizing users input
-        current_password = safeHTML(request.form.get('current_password', ''))
-        new_password = safeHTML(request.form.get('new_password', ''))
-
-        user = db.session.execute(
-            text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{current_password}' LIMIT 1")
-        ).mappings().first()
-        #Changing to parameterized queries to protect from SQL injection
-        user = cursor.execute(text(f"SELECT * FROM user WHERE username = (username) AND password = (current_password) LIMIT 1)"
-                                   f"VALUES (:username,:current_password)", #: so read as parameters, not columns
-                                   #Needs to be dictionary, not tuple
-                                   {
-                                       "username": username,
-                                       "current_password": current_password
-                                   }
-                                   )
-                              )
-        #Checking user exists after input validation and data sanitization
-        user = User.query.filter_by(username=username).first()
-
-        # Enforce: current password must be valid for user
-        if not user:
-            flash('Current password is incorrect', 'error')
-            return render_template('change_password.html')
-
-        # Enforce: new password must be different from current password
-        #Hashing new password and comparing to current password (already hashed at login/register stage)
-        if bcrypt.check_password_hash(user.password, current_password):
-            flash('New password must be different from the current password', 'error')
-            return render_template('change_password.html')
-
-        #Changin to parameterized queries to protect against SQL injection
-        db.session.execute(
-            text(f"UPDATE user SET password = '{new_password}' WHERE username = '{username}'")
-        )
-        db.session.execute(text(f"UPDATE user SET password = (new_password) WHERE username = (username)"
-                                f"VALUES (:username,:new_password)", #: So read as parameters, not columns
-                                {
-                                    "username": username,
-                                 "new_password": new_password
-                                }))
-        db.session.commit()
-        #Changing to parameterized queries to protect from SQL injection
-        #db.session.execute("UPDATE user SET password = ? WHERE username = ?",
-                           #(username, new_password))
-
-        flash('Password changed successfully', 'success')
-        return redirect(url_for('main.dashboard'))
-
-    return render_template('change_password.html', form=form)'''
 
 
 
