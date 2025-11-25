@@ -63,6 +63,7 @@ def make_session_permanent():
 
 @main.route('/')
 def home():
+    #print(response.headers)
     return render_template('home.html')
 
 

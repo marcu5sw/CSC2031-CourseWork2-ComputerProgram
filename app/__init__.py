@@ -28,12 +28,25 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # CSP
+    csp = {
+        'default-src': ["'self'"],
+        'script-src': ["'self'",
+                        "https://cdn.jsdelivr.net"], #Allows JS from jsDelivr
+        'style-src': ["'self'",
+                      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+                      "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"],
+        'font-src': ["'self'",
+                     "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+                      "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"]
+    }
+
     db.init_app(app)
     csrf.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'main.login'
     limiter.init_app(app)
-    talisman.init_app(app)
+    talisman.init_app(app, content_security_policy=csp)
     #Session(app)
 
 
@@ -68,6 +81,11 @@ def create_app():
                         loginattempts=user["Log in Attempts"])
             db.session.add(user)
             db.session.commit()
+
+
+
+
+
 
     return app
 
