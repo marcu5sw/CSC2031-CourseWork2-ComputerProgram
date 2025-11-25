@@ -31,7 +31,7 @@ def safeHTML(user_input):
 
 
 #REMOVE LATER IF IMPLEMENTING FLASK TALISMAN EXTENSION. DOES THIS AUTOMATICALLY
-@main.after_request
+'''@main.after_request
 def apply_security(response):
     #Enabling HSTS (Telling browser to only send HTTPS to keep communication secure)
     #Set to 1 year and to all subdomains
@@ -44,7 +44,7 @@ def apply_security(response):
     response.headers['Referrer-Policy'] = 'Same-Origin'
     #Setting permissions policy
     response.headers['Permissions-Policy'] = 'geolocation; camera; microphone'
-    return response
+    return response'''
 
 
 
