@@ -328,9 +328,13 @@ def change_password():
 @main.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    session.clear()
-    flash("You have been logged out.")
+    if current_user.is_authenticated:
+        logout_user()
+        session.clear()
+        flash("You have been logged out.")
+        return redirect(url_for('main.dashboard'))
+
+    flash("You are not signed in, can't log out")
     return redirect(url_for('main.dashboard'))
 
 
