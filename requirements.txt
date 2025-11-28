@@ -11,3 +11,4 @@ flask_session
 flask_limiter
 flask-talisman
 flask_principal
+logging

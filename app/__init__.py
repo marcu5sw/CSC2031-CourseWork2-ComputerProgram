@@ -10,6 +10,7 @@ from flask_talisman import Talisman
 from flask_principal import Principal
 #Importing functions and variables to store user role
 from .permissions import admin_permission, moderator_permission, user_permission, register_identity_permissions
+import logging
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
@@ -19,6 +20,16 @@ limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
 talisman = Talisman()
 principal = Principal()
 
+
+
+#Setting up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format = '%(asctime)s - %(levelname)s - %(message)s',
+    filename='./access.log',
+    filemode='a'
+)
+logger = logging.getLogger(__name__)
 
 
 @login_manager.user_loader
