@@ -2,11 +2,12 @@ import traceback
 from flask import request, render_template, redirect, url_for, session, Blueprint, flash, current_app, abort
 from flask_wtf.csrf import CSRFError
 from sqlalchemy import text
-from app import db, limiter
+from app import db, limiter, principal
 from app.forms import RegisterForm, LoginForm, changePasswordForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user, logout_user
+from flask_principal import Permission, RoleNeed, identity_loaded
 #from sqlalchemy.engine import cursor
 
 
@@ -224,11 +225,15 @@ def register():
 
 
 
+#Defines the role needed ('admin')
+admin_permission = Permission(RoleNeed('admin'))
+
 
 
 
 @main.route('/admin-panel')
 @login_required
+@admin_permission.require(http_exception=403) #Checking stored user role (done in __init__ ) with defined variable
 def admin():
     if session.get('role') != 'admin':
         stack = ''.join(traceback.format_stack(limit=25))
@@ -275,8 +280,10 @@ def change_password():
     form = changePasswordForm()
 
     if 'user' not in session:
+        flash("Please login to change your password")
         stack = ''.join(traceback.format_stack(limit=25))
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+
 
 
 
@@ -328,12 +335,14 @@ def change_password():
 @main.route('/logout')
 @login_required
 def logout():
+    #Checking user is first logged in
     if current_user.is_authenticated:
         logout_user()
         session.clear()
         flash("You have been logged out.")
         return redirect(url_for('main.dashboard'))
 
+    #Can't log out a user that is not logged in
     flash("You are not signed in, can't log out")
     return redirect(url_for('main.dashboard'))
 
