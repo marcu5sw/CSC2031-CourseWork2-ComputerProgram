@@ -228,9 +228,6 @@ def register():
 #Defines the role needed ('admin')
 admin_permission = Permission(RoleNeed('admin'))
 
-
-
-
 @main.route('/admin-panel')
 @login_required
 @admin_permission.require(http_exception=403) #Checking stored user role (done in __init__ ) with defined variable
@@ -243,8 +240,13 @@ def admin():
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
     return render_template('admin.html')
 
+
+#Defines the role needed ('moderator')
+mod_permission = Permission(RoleNeed('moderator'))
+
 @main.route('/moderator')
 @login_required
+@mod_permission.require(http_exception=403)
 def moderator():
     if session.get('role') != 'moderator':
         stack = ''.join(traceback.format_stack(limit=25))
@@ -254,8 +256,12 @@ def moderator():
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
     return render_template('moderator.html')
 
+
+user_permission = Permission(RoleNeed('user'))
+
 @main.route('/user-dashboard')
 @login_required
+@user_permission.require(http_exception=403)
 def user_dashboard():
     if session.get('role') != 'user':
         stack = ''.join(traceback.format_stack(limit=25))
