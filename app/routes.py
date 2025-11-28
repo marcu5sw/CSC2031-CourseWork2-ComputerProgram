@@ -8,6 +8,7 @@ from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user, logout_user
 from flask_principal import Permission, RoleNeed, identity_loaded
+from .permissions import *
 #from sqlalchemy.engine import cursor
 
 
@@ -29,24 +30,6 @@ def safeHTML(user_input):
         attributes = {'a': ['href', 'title']},
         strip = True
     )
-
-
-#REMOVE LATER IF IMPLEMENTING FLASK TALISMAN EXTENSION. DOES THIS AUTOMATICALLY
-'''@main.after_request
-def apply_security(response):
-    #Enabling HSTS (Telling browser to only send HTTPS to keep communication secure)
-    #Set to 1 year and to all subdomains
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    #Denying iframe options (HTML within HTML)
-    response.headers['X-Frame-Options'] = 'DENY'
-    #Denying MIME Sniff. Where browser guesses content format when HTTP Content-Type header is missing
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    #Setting referrer headers to only be sent from the same origin
-    response.headers['Referrer-Policy'] = 'Same-Origin'
-    #Setting permissions policy
-    response.headers['Permissions-Policy'] = 'geolocation; camera; microphone'
-    return response'''
-
 
 
 #Error handling for CSRF
@@ -225,50 +208,46 @@ def register():
 
 
 
-#Defines the role needed ('admin')
-admin_permission = Permission(RoleNeed('admin'))
-
 @main.route('/admin-panel')
 @login_required
 @admin_permission.require(http_exception=403) #Checking stored user role (done in __init__ ) with defined variable
 def admin():
-    if session.get('role') != 'admin':
+    #Redundant when using admin_permission
+    '''if session.get('role') != 'admin':
         stack = ''.join(traceback.format_stack(limit=25))
         current_app.logger.warning(
             f'{current_user.username} TRYING TO ACCESS THE ADMIN-PANEL'
         )
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")'''
     return render_template('admin.html')
 
 
-#Defines the role needed ('moderator')
-mod_permission = Permission(RoleNeed('moderator'))
 
 @main.route('/moderator')
 @login_required
-@mod_permission.require(http_exception=403)
+@moderator_permission.require(http_exception=403)
 def moderator():
-    if session.get('role') != 'moderator':
+
+    '''if session.get('role') != 'moderator':
         stack = ''.join(traceback.format_stack(limit=25))
         current_app.logger.warning(
             f'{current_user.username} TRYING TO ACCESS THE MODERATOR DASHBOARD'
         )
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")'''
     return render_template('moderator.html')
 
 
-user_permission = Permission(RoleNeed('user'))
 
 @main.route('/user-dashboard')
 @login_required
 @user_permission.require(http_exception=403)
 def user_dashboard():
-    if session.get('role') != 'user':
+    '''if session.get('role') != 'user':
         stack = ''.join(traceback.format_stack(limit=25))
         current_app.logger.warning(
             f'{current_user.username} TRYING TO ACCESS THE USER DASHBOARD'
         )
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")'''
     return render_template('user_dashboard.html', username=session.get('user'))
 
 

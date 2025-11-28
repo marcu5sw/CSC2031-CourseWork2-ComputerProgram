@@ -7,7 +7,9 @@ from flask_login import LoginManager, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-from flask_principal import Principal, Permission, RoleNeed, identity_loaded
+from flask_principal import Principal
+#Importing functions and variables to store user role
+from .permissions import admin_permission, moderator_permission, user_permission, register_identity_permissions
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
@@ -51,11 +53,7 @@ def create_app():
     principal.init_app(app)
     #Session(app)
 
-    # Storing the users role
-    @identity_loaded.connect_via(app)
-    def on_identity_loaded(sender, identity):
-        if hasattr(current_user, "role"):
-            identity.provides.add(RoleNeed(current_user.role))
+    register_identity_permissions(app) #Defined in permissions.py
 
     from .routes import main
     app.register_blueprint(main)
