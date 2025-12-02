@@ -1,3 +1,5 @@
+import sys
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
@@ -22,15 +24,22 @@ principal = Principal()
 
 
 
+
+'''
+Basic Config sets the root logger, which is used when running the program
+Setting the filename inside the root logger means the URL to run is sent to the log file
+Setting filename outside the root logger so URL is still sent to the terminal (default)
+'''
 #Setting up logging
 logging.basicConfig(
     level=logging.INFO,
     format = '%(asctime)s - %(levelname)s - %(message)s',
-    filename='./access.log',
-    filemode='a'
+    #filename='access.log',
+    #filemode='a'
 )
 logger = logging.getLogger(__name__)
 
+logger.addHandler(logging.FileHandler('app/log/access.logs', mode='a'))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -78,6 +87,7 @@ def create_app():
         adminpass = bcrypt.generate_password_hash('Adminpass!23').decode('utf-8')
         modpass = bcrypt.generate_password_hash('Modpass!23').decode('utf-8')
         userpass = bcrypt.generate_password_hash('Userpass!23').decode('utf-8')
+
 
 
 

@@ -53,7 +53,7 @@ def home():
 
 
 @main.route('/login', methods=['GET', 'POST'])
-@limiter.limit("100 per minute", methods=["POST"]) #ONLY APPLIES TO POST REQUESTS
+#@limiter.limit("100 per minute", methods=["POST"]) #ONLY APPLIES TO POST REQUESTS
 def login():
     print("Before initializing login")
 
@@ -82,7 +82,8 @@ def login():
 
             #Logging successful login
             current_app.logger.info(
-                f"REGISTRATION SUCCESSFUL FOR {username} from IP {request.remote_addr} at {datetime.now()}"
+                f"LOGIN SUCCESSFUL: USERNAME={user.username}, ROLE={user.role}, "
+                f"ENDPOINT=/login, IP={request.remote_addr}, DATETIME={datetime.now()}"
             )
 
 
@@ -98,7 +99,8 @@ def login():
             db.session.commit()
             #Logging the failure
             current_app.logger.warning(
-                f"REGISTRATION NOT SUCCESSFUL FOR {username} from IP {request.remote_addr} at {datetime.now()}"
+                f"LOGIN FAILURE:  USERNAME={user.username}, ROLE={user.role}, ENDPOINT={request.path}, "
+                f"IP={request.remote_addr}, DATETIME={datetime.now()},"
                 f"ATTEMPT NUMBER: {user.loginattempts}"
             )
             flash('Password is invalid, please try again')
@@ -123,6 +125,9 @@ def login():
         #CASE 3: Username doesn't exist
         else:
             flash("This user does not exist")
+            current_app.logger.warning(
+                f'USER LOGIN ATTEMPT FAILED FOR {username} from IP {request.remote_addr}'
+            )
             return redirect(url_for('main.login'))
 
 
@@ -132,11 +137,8 @@ def login():
 @main.route('/dashboard')
 @login_required
 def dashboard():
-    '''if 'user' in session:
-        username = session['user']
-        bio = session['bio']
-        return render_template('dashboard.html', username=username, bio=bio)
-    return redirect(url_for('main.login'))'''
+
+   #Checking user is first logged in
     if not current_user:
         flash('User not found')
         return redirect(url_for('main.login'))
@@ -147,6 +149,7 @@ def dashboard():
 
 
 @main.route('/register', methods=['GET', 'POST'])
+#@limiter.limit('7 per minute', method=['POST']) #Only applies to post requests
 def register():
     form = RegisterForm()
     if request.method == 'POST' and form.validate_on_submit():
@@ -212,13 +215,6 @@ def register():
 @login_required
 @admin_permission.require(http_exception=403) #Checking stored user role (done in __init__ ) with defined variable
 def admin():
-    #Redundant when using admin_permission
-    '''if session.get('role') != 'admin':
-        stack = ''.join(traceback.format_stack(limit=25))
-        current_app.logger.warning(
-            f'{current_user.username} TRYING TO ACCESS THE ADMIN-PANEL'
-        )
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")'''
     return render_template('admin.html')
 
 
@@ -227,13 +223,6 @@ def admin():
 @login_required
 @moderator_permission.require(http_exception=403)
 def moderator():
-
-    '''if session.get('role') != 'moderator':
-        stack = ''.join(traceback.format_stack(limit=25))
-        current_app.logger.warning(
-            f'{current_user.username} TRYING TO ACCESS THE MODERATOR DASHBOARD'
-        )
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")'''
     return render_template('moderator.html')
 
 
@@ -242,19 +231,9 @@ def moderator():
 @login_required
 @user_permission.require(http_exception=403)
 def user_dashboard():
-    '''if session.get('role') != 'user':
-        stack = ''.join(traceback.format_stack(limit=25))
-        current_app.logger.warning(
-            f'{current_user.username} TRYING TO ACCESS THE USER DASHBOARD'
-        )
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")'''
     return render_template('user_dashboard.html', username=session.get('user'))
 
 
-
-
-#1) Users current password needs to match hash value of stored value
-#2) Users new password can't match current password
 
 
 @main.route('/change-password', methods=['GET', 'POST'])

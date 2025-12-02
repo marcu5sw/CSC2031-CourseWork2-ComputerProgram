@@ -12,3 +12,4 @@ flask_limiter
 flask-talisman
 flask_principal
 logging
+cryptography
