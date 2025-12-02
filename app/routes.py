@@ -10,7 +10,7 @@ from flask_login import login_required, login_user, current_user, logout_user
 from flask_principal import Permission, RoleNeed, identity_loaded
 from .permissions import *
 #from sqlalchemy.engine import cursor
-
+from config import fernet
 
 
 from . import bcrypt
@@ -144,7 +144,10 @@ def dashboard():
         return redirect(url_for('main.login'))
 
 
-    return render_template('dashboard.html', username=current_user.username, bio=current_user.bio)
+    #Decrypting the users bio
+    decrypted_bio = fernet.decrypt(session['bio'])
+    #Decoding to remove "b"
+    return render_template('dashboard.html', username=current_user.username, bio=decrypted_bio.decode())
 
 
 
@@ -157,8 +160,11 @@ def register():
             username = safeHTML(request.form['username'])
             password = safeHTML(request.form['password'])
             bio = safeHTML(request.form['bio'])
-            role = request.form.get('role', 'user')
+            role = safeHTML(request.form.get('role', 'user'))
             #loginattempts = request.form.get('loginattempts', 0) #Default is 0
+
+            #Encrypting users bio
+            encrypted_bio = fernet.encrypt(bio.encode())
 
 
 
@@ -173,7 +179,7 @@ def register():
                                    "username": username,
                                    "password": password,
                                    "role": role,
-                                   "bio": bio,
+                                   "bio": encrypted_bio,
                                    "loginattempts": 0
                                })
 
