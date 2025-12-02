@@ -1,18 +1,26 @@
 from cryptography.fernet import Fernet
+import os
 
 
 
-'''
-Note fernet is generating a new key each time the server is run
-Works because Database is reset each time the server restarts
-Other option is to set it at OS level but might not have anything set when submitting
-'''
+#Getting secret key from OS level (environmental variable)
+key = os.environ.get('SECRET_KEY')
 
-#Generating a new key using Fernet class
-key = Fernet.generate_key()
-fernet = Fernet(key) #initializing to be used for encryption and decryption
+print (key)
+
+#If there isn't an environmental variable called SECRET_KEY, Fernet to create one
+if key is None:
+    key = Fernet.generate_key()
+
+#Can't encode None so can't declair above
+else:
+    key = key.encode()
 
 
+print (key)
+
+
+fernet = Fernet(key) #Initializing to be used elsewhere
 
 
 
@@ -22,4 +30,8 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
+
+
+print(Config.SECRET_KEY)
+
 

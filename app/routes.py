@@ -69,7 +69,7 @@ def login():
         user = User.query.filter_by(username=username).first()  # Checking User exists
 
         #CASE 1: Right username and password
-        #Hashing password and checking against DB
+        #Checking password against what stored in DB
         if user and bcrypt.check_password_hash(user.password, password): #Comparing the 2 hash values
 
             print("Works")
