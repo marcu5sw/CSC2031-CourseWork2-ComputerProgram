@@ -13,6 +13,7 @@ from flask_principal import Principal
 #Importing functions and variables to store user role
 from .permissions import admin_permission, moderator_permission, user_permission, register_identity_permissions
 import logging
+from config import fernet
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
@@ -89,14 +90,18 @@ def create_app():
         userpass = bcrypt.generate_password_hash('Userpass!23').decode('utf-8')
 
 
-
+        #Encrypting bio field:
+        #Fernet requires bytes not strings so encoding the data
+        adminbioencrypt = fernet.encrypt("I'm an administrator".encode())
+        modbioencrypt = fernet.encrypt("I'm a moderator".encode())
+        userbioencrypt = fernet.encrypt("I'm a basic user".encode())
 
         users = [
-            {"username": "user1@email.com", "password": userpass, "role": "user", "bio": "I'm a basic user",
+            {"username": "user1@email.com", "password": userpass, "role": "user", "bio": userbioencrypt,
                         "Log in Attempts": 0},
-            {"username": "mod1@email.com", "password": modpass, "role": "moderator", "bio": "I'm a moderator",
+            {"username": "mod1@email.com", "password": modpass, "role": "moderator", "bio": modbioencrypt,
                         "Log in Attempts": 0},
-            {"username": "admin1@email.com", "password": adminpass, "role": "admin", "bio": "I'm an administrator",
+            {"username": "admin1@email.com", "password": adminpass, "role": "admin", "bio": adminbioencrypt,
                         "Log in Attempts": 0},
         ]
 
