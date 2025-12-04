@@ -13,3 +13,4 @@ flask-talisman
 flask_principal
 logging
 cryptography
+dotenv
