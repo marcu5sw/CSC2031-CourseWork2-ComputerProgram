@@ -25,14 +25,15 @@ fernet = Fernet(key) #Initializing to be used elsewhere'''
 
 
 load_dotenv()
-SECRET_KEY = os.environ.get('FLASK_SECRET_KEY')
-print(SECRET_KEY)
+#Key is stored as String in .env, converting into bytes (expected for fernet objects)
+key = os.environ.get('FLASK_SECRET_KEY').encode()
+fernet= Fernet(key)
 
 
 
 class Config:
     DEBUG = True
-    SECRET_KEY = SECRET_KEY #Has to be string so set to key
+    SECRET_KEY = key #Has to be string so set to key
     SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True

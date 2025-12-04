@@ -1,7 +1,7 @@
 from app import create_app
 from cryptography.fernet import Fernet
 import os
-#from config import fernet
+from config import fernet
 
 
 #key = Fernet.generate_key()

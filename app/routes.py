@@ -11,6 +11,7 @@ from flask_principal import Permission, RoleNeed, identity_loaded
 from .permissions import *
 #from sqlalchemy.engine import cursor
 from config import fernet
+import re #Comes with python, not needed in requirements.txt
 
 
 from . import bcrypt
@@ -30,6 +31,12 @@ def safeHTML(user_input):
         attributes = {'a': ['href', 'title']},
         strip = True
     )
+
+
+
+#Logging sanitized input
+def sanitize_for_log(value):
+    return re.sub(r'[\n\r\t]', '_', str(value))
 
 
 #Error handling for CSRF
@@ -82,7 +89,7 @@ def login():
 
             #Logging successful login
             current_app.logger.info(
-                f"LOGIN SUCCESSFUL: USERNAME={user.username}, ROLE={user.role}, "
+                f"LOGIN SUCCESSFUL: USERNAME={sanitize_for_log(user.username)}, ROLE={user.role}, "
                 f"ENDPOINT=/login, IP={request.remote_addr}, DATETIME={datetime.now()}"
             )
 
