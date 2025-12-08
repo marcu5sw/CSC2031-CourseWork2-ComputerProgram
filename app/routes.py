@@ -7,13 +7,16 @@ from app.forms import RegisterForm, LoginForm, changePasswordForm
 from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user, logout_user
-from flask_principal import Permission, RoleNeed, identity_loaded
 from .permissions import *
 from config import fernet
 import re
-
 from . import bcrypt
 import bleach
+
+
+
+
+
 
 main = Blueprint('main', __name__)
 
@@ -41,34 +44,52 @@ def sanitize_for_log(value):
 @main.errorhandler(CSRFError)
 def handle_csrf_error(e):
     #Logging the error
-    current_app.logger.warning(
+    current_app.logger.critical(
         f"CSRF ERROR DETECTED FROM IP {request.remote_addr} AT {datetime.now()}"
     )
     return render_template('error.html', reason = e.description), 403
+
+
+#Global error handler. called when reaches 403 error
+@main.errorhandler(403)
+def main_error(e):
+    current_app.logger.critical(
+        f"FORBIDDEN ACCESS. USERNAME: {sanitize_for_log(getattr(current_user.username, 'ANONYMOUS'))},"
+        f" IP: {request.remote_addr}, DATETIME: {datetime.now()}, ENDPOINT: {request.path}"
+    )
+    return render_template('error.html'), 403
+
 
 @main.before_request
 def make_session_permanent():
     session.permanent = True
 
+
+
 @main.route('/')
 def home():
-    #print(response.headers)
     return render_template('home.html')
+
+
+
+
+
+
 
 
 
 @main.route('/login', methods=['GET', 'POST'])
 #@limiter.limit("100 per minute", methods=["POST"]) #ONLY APPLIES TO POST REQUESTS
 def login():
-    print("Before initializing login")
+
 
     form = LoginForm()
-    print("Before validating login")
+
     if request.method == 'POST' and form.validate_on_submit():
 
         #sanitizing input
         username = safeHTML(request.form['username'])
-        password = request.form['password']
+        password = safeHTML(request.form['password'])
 
         #Mitigating SQL injection (ORM based)
         user = User.query.filter_by(username=username).first()  # Checking User exists
@@ -104,17 +125,17 @@ def login():
             db.session.commit()
             #Logging the failure
             current_app.logger.warning(
-                f"LOGIN FAILURE:  USERNAME={user.username}, ROLE={user.role}, ENDPOINT={request.path}, "
-                f"IP={request.remote_addr}, DATETIME={datetime.now()},"
-                f"ATTEMPT NUMBER: {user.loginattempts}"
+                f"LOGIN FAILURE. USERNAME: {sanitize_for_log(user.username)}, ROLE: {user.role}, ENDPOINT: {request.path}, "
+                f"IP: {request.remote_addr}, DATETIME: {datetime.now()}, ATTEMPT NUMBER: {user.loginattempts}"
             )
             flash('Password is invalid, please try again')
 
 
             #Locking user out after 5 failed attempts
             if user.loginattempts >= 6:
-                current_app.logger.warning(
-                    f"USER EXCEEDED 5 LOGIN FAILURES, LOCKING OUT"
+                current_app.logger.critical(
+                    f"LOCKOUT. USERNAME: {sanitize_for_log(user.username)}, ROLE: {user.role}, ENDPOINT: {request.path}, "
+                    f"IP: {request.remote_addr}, DATETIME: {datetime.now()}, TOO MANY ATTEMPTS (5)"
                 )
                 flash('Too many login attempts, try again later')
                 return 'Too many login attempts, try again later', 403
@@ -131,7 +152,7 @@ def login():
         else:
             flash("This user does not exist")
             current_app.logger.warning(
-                f'USER LOGIN ATTEMPT FAILED FOR {username} from IP {request.remote_addr}'
+                f'LOGIN FAILURE. USERNAME: {sanitize_for_log(username)}, ENDPOINT: {request.path}, IP: {request.remote_addr}'
             )
             return redirect(url_for('main.login'))
 
@@ -139,20 +160,30 @@ def login():
 
     return render_template('login.html', form=form)
 
+
+
+
+
+
+
+
 @main.route('/dashboard')
 @login_required
 def dashboard():
-
-   #Checking user is first logged in
-    if not current_user:
-        flash('User not found')
-        return redirect(url_for('main.login'))
 
 
     #Decrypting the users bio
     decrypted_bio = fernet.decrypt(session['bio'])
     #Decoding to remove "b"
     return render_template('dashboard.html', username=current_user.username, bio=decrypted_bio.decode())
+
+
+
+
+
+
+
+
 
 
 
@@ -192,7 +223,8 @@ def register():
 
             # Logging successful registration
             current_app.logger.info(
-                f"Registration Successful for {username} from IP {request.remote_addr} at {datetime.now()}")
+                f"REGISTRATION SUCCESSFUL. USERNAME: {sanitize_for_log(username)}, ENDPOINT: {request.path}, "
+                f"IP: {request.remote_addr}, DATETIME: {datetime.now()}")
 
             return redirect(url_for('main.dashboard'))
 
@@ -204,7 +236,8 @@ def register():
     if not form.validate_on_submit():
 
         # Logging errors
-        current_app.logger.warning(f"Registration Failed: {form.errors} from IP {request.remote_addr} at {datetime.now()}")
+        current_app.logger.warning(f"REGISTRATION FAILURE: ERROR: {form.errors}, ENDPOINT: {request.path},"
+                                   f"IP: {request.remote_addr}, DATETIME: {datetime.now()}")
 
 
         # Flashing the error
@@ -222,11 +255,24 @@ def register():
 
 
 
+
+
+
+
+
+
+
 @main.route('/admin-panel')
 @login_required
 @admin_permission.require(http_exception=403) #Checking stored user role (done in __init__ ) with defined variable
 def admin():
     return render_template('admin.html')
+
+
+
+
+
+
 
 
 
@@ -238,11 +284,24 @@ def moderator():
 
 
 
+
+
+
+
+
+
 @main.route('/user-dashboard')
 @login_required
 @user_permission.require(http_exception=403)
 def user_dashboard():
     return render_template('user_dashboard.html', username=session.get('user'))
+
+
+
+
+
+
+
 
 
 
@@ -272,11 +331,21 @@ def change_password():
         #Checking current password matches stored password (Comparing hash values)
         if not bcrypt.check_password_hash(current_user.password, current_password):
             flash("Current password is incorrect, try again.")
+            current_app.logger.warning(
+                f"PASSWORD CHANGE FAILURE. USERNAME: {sanitize_for_log(current_user.username)}, "
+                f"ENDPOINT: {request.path}, IP: {request.remote_addr}, DATETIME: {datetime.now()},"
+                f"WRONG CURRENT PASSWORD"
+            )
             return render_template('change_password.html', form=form)
 
         #Checking new password doesn't match current password (don't need hashing)
         if new_password == current_password:
             flash("New Password cannot be the same as the current password, try again.")
+            current_app.logger.warning(
+                f"PASSWORD CHANGE FAILURE. USERNAME: {sanitize_for_log(current_user.username)}, "
+                f"ENDPOINT: {request.path}, IP: {request.remote_addr}, DATETIME: {datetime.now()}"
+                f"NEW PASSWORD MATCHES OLD"
+            )
             return render_template('change_password.html', form=form)
 
 
@@ -298,12 +367,28 @@ def change_password():
 
         db.session.commit()
 
+
+        #Logging
+        current_app.logger.info(
+            f"PASSWORD CHANGED. USERNAME: {sanitize_for_log(current_user.username)}, ENDPOINT: {request.path},"
+            f" IP: {request.remote_addr}, DATETIME: {datetime.now()}"
+        )
+
         flash("Password has been changed successfully.")
         return redirect(url_for('main.dashboard'))
 
 
 
     return render_template('change_password.html', form=form)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -315,10 +400,18 @@ def logout():
         logout_user()
         session.clear()
         flash("You have been logged out.")
+        current_app.logger.info(
+            f"LOGOUT SUCCESSFUL. USERNAME: {sanitize_for_log(current_user.username)}, ROLE: {current_user.role}, "
+            f"ENDPOINT: {request.path}, IP: {request.remote_addr}, DATETIME: {datetime.now()}"
+        )
         return redirect(url_for('main.dashboard'))
 
     #Can't log out a user that is not logged in
     flash("You are not signed in, can't log out")
+    current_app.logger.warning(
+        f"LOGOUT FAILURE. IP: {request.remote_addr}, DATETIME: {datetime.now()}"
+        f"USER NOT LOGGED IN"
+    )
     return redirect(url_for('main.dashboard'))
 
 
