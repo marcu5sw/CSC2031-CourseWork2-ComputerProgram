@@ -9,10 +9,8 @@ from datetime import datetime
 from flask_login import login_required, login_user, current_user, logout_user
 from flask_principal import Permission, RoleNeed, identity_loaded
 from .permissions import *
-#from sqlalchemy.engine import cursor
 from config import fernet
-import re #Comes with python, not needed in requirements.txt
-
+import re
 
 from . import bcrypt
 import bleach

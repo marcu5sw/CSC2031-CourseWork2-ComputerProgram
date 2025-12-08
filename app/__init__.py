@@ -14,6 +14,8 @@ from flask_principal import Principal
 from .permissions import admin_permission, moderator_permission, user_permission, register_identity_permissions
 import logging
 from config import fernet
+from logging.handlers import RotatingFileHandler
+
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
@@ -40,7 +42,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+#Setting outside root so link still given to terminal
 logger.addHandler(logging.FileHandler('app/log/access.logs', mode='a'))
+#Log Rotation. Set to 1MB per log file with 5 backups
+handler = RotatingFileHandler('app/log/access.log', maxBytes=1*1024*1024, backupCount=5)
+logger.addHandler(handler)
+
 
 @login_manager.user_loader
 def load_user(user_id):
