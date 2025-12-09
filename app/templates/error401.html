@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %} 401 Error - Anauthorized Access {% endblock %}
+
+
+{% block content %}
+<form method="POST" action="{{ url_for('main.error401') }}" novalidate>
+
+
+    {{ form.hidden_tag() }}
+
+    <h1>
+        401 Error - Unauthorized Access
+    </h1>
+
+    <h2>
+        You are not authorized to access this page, please return to home
+    </h2>
+
+    <p>
+        {{ form.submit.label }}
+        {{ form.submit() }}
+    </p>
+
+</form>
+{% endblock %}

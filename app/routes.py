@@ -3,7 +3,7 @@ from flask import request, render_template, redirect, url_for, session, Blueprin
 from flask_wtf.csrf import CSRFError
 from sqlalchemy import text
 from app import db, limiter, principal
-from app.forms import RegisterForm, LoginForm, changePasswordForm
+from app.forms import RegisterForm, LoginForm, changePasswordForm, returnToHome
 from app.models import User
 from datetime import datetime
 from flask_login import login_required, login_user, current_user, logout_user
@@ -12,6 +12,7 @@ from config import fernet
 import re
 from . import bcrypt
 import bleach
+from flask_principal import Identity, identity_changed
 
 
 
@@ -50,20 +51,25 @@ def handle_csrf_error(e):
     return render_template('error.html', reason = e.description), 403
 
 
-#Global error handler. called when reaches 403 error
-@main.errorhandler(403)
+#Global error handler. called when reaches 401 error (unauthorized access)
+@main.errorhandler(401)
 def main_error(e):
+    form = returnToHome()
+
     current_app.logger.critical(
-        f"FORBIDDEN ACCESS. USERNAME: {sanitize_for_log(getattr(current_user.username, 'ANONYMOUS'))},"
+        #If user has attribute username, use that, if not then take anonymous as default
+        f"FORBIDDEN ACCESS. USERNAME: {sanitize_for_log(getattr(current_user, 'username', 'ANONYMOUS'))},"
         f" IP: {request.remote_addr}, DATETIME: {datetime.now()}, ENDPOINT: {request.path}"
     )
-    return render_template('error.html'), 403
+    return render_template('error401.html', form=form), 401
+
+
+
 
 
 @main.before_request
 def make_session_permanent():
     session.permanent = True
-
 
 
 @main.route('/')
@@ -116,6 +122,17 @@ def login():
 
             login_user(user)
             user.loginattempts = 0  # Resetting to 0 after a correct login attempt
+
+
+
+            #Flask Principal library can only read Identity objects, can't read from current_user.role
+            #Creating an identity object with the users ID and sets that against
+            identity = Identity(user.id)
+            #Setting the users role as a Need as that is what is being checked in admin_required etc
+            identity.provides.add(RoleNeed((user.role)))
+            #Attaching the identity to the current request
+            identity_changed.send(current_app._get_current_object(), identity=identity)
+
             return redirect(url_for('main.dashboard'))
 
 
@@ -190,6 +207,8 @@ def dashboard():
 @main.route('/register', methods=['GET', 'POST'])
 #@limiter.limit('7 per minute', method=['POST']) #Only applies to post requests
 def register():
+    #Clearing previous session. Was keeping bio field before
+    session.clear()
     form = RegisterForm()
     if request.method == 'POST' and form.validate_on_submit():
             #Sanitizing input
@@ -264,7 +283,7 @@ def register():
 
 @main.route('/admin-panel')
 @login_required
-@admin_permission.require(http_exception=403) #Checking stored user role (done in __init__ ) with defined variable
+@admin_permission.require(http_exception=401) #Checking stored user role with defined variable (both done in permissions)
 def admin():
     return render_template('admin.html')
 
@@ -278,7 +297,7 @@ def admin():
 
 @main.route('/moderator')
 @login_required
-@moderator_permission.require(http_exception=403)
+@moderator_permission.require(http_exception=401)
 def moderator():
     return render_template('moderator.html')
 
@@ -292,7 +311,7 @@ def moderator():
 
 @main.route('/user-dashboard')
 @login_required
-@user_permission.require(http_exception=403)
+@user_permission.require(http_exception=401)
 def user_dashboard():
     return render_template('user_dashboard.html', username=session.get('user'))
 
@@ -397,11 +416,13 @@ def change_password():
 def logout():
     #Checking user is first logged in
     if current_user.is_authenticated:
+        username = current_user.username
+        role = current_user.role
         logout_user()
         session.clear()
         flash("You have been logged out.")
         current_app.logger.info(
-            f"LOGOUT SUCCESSFUL. USERNAME: {sanitize_for_log(current_user.username)}, ROLE: {current_user.role}, "
+            f"LOGOUT SUCCESSFUL. USERNAME: {sanitize_for_log(username)}, ROLE: {role}, "
             f"ENDPOINT: {request.path}, IP: {request.remote_addr}, DATETIME: {datetime.now()}"
         )
         return redirect(url_for('main.dashboard'))
@@ -415,5 +436,13 @@ def logout():
     return redirect(url_for('main.dashboard'))
 
 
+
+
+@main.route('/error401', methods=['GET', 'POST'])
+def error401():
+    if request.method == 'POST':
+        return redirect(url_for('main.home'))
+
+    return render_template('error401.html')
 
 

@@ -1,6 +1,6 @@
 import sys
 
-from flask import Flask
+from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from flask_wtf.csrf import CSRFProtect
@@ -11,7 +11,7 @@ from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from flask_principal import Principal
 #Importing functions and variables to store user role
-from .permissions import admin_permission, moderator_permission, user_permission, register_identity_permissions
+from app.permissions import *
 import logging
 from config import fernet
 from logging.handlers import RotatingFileHandler
@@ -37,15 +37,13 @@ Setting filename outside the root logger so URL is still sent to the terminal (d
 logging.basicConfig(
     level=logging.INFO,
     format = '%(asctime)s - %(levelname)s - %(message)s',
-    #filename='access.log',
-    #filemode='a'
 )
 logger = logging.getLogger(__name__)
 
 #Setting outside root so link still given to terminal
 logger.addHandler(logging.FileHandler('app/log/access.logs', mode='a'))
 #Log Rotation. Set to 1MB per log file with 5 backups
-handler = RotatingFileHandler('app/log/access.log', maxBytes=1*1024*1024, backupCount=5)
+handler = RotatingFileHandler('app/log/access.logs', maxBytes=1*1024*1024, backupCount=5)
 logger.addHandler(handler)
 
 
@@ -86,7 +84,9 @@ def create_app():
     from .routes import main
     app.register_blueprint(main)
 
+
     with app.app_context():
+
         from .models import User
         db.drop_all()
         db.create_all()
@@ -119,6 +119,11 @@ def create_app():
                         loginattempts=user["Log in Attempts"])
             db.session.add(user)
             db.session.commit()
+
+
+
+
+
 
 
 

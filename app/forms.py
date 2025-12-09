@@ -93,3 +93,8 @@ class changePasswordForm(FlaskForm):
                                                        message="Password must be at least 10 characters long.")])
     submit = SubmitField('Change Password')
 
+
+
+class returnToHome(FlaskForm):
+
+    submit = SubmitField('Return To Home')

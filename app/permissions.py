@@ -14,7 +14,3 @@ def register_identity_permissions(app):
     def on_identity_loaded(sender, identity):
         if hasattr(current_user, 'role'):
             identity.provides.add(RoleNeed(current_user.role))
-
-
-
-
